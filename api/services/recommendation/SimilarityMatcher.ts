@@ -7,6 +7,7 @@ export class SimilarityMatcher {
   private static readonly MIN_SIMILARITY = 0.3;
   private static readonly ACCEPT_BOOST_COEFF = 0.04;
   private static readonly ACCEPT_BOOST_MAX = 0.25;
+  private static readonly CONTENT_SIMILARITY_THRESHOLD = 0.8;
 
   static cosineSimilarity(vecA: number[], vecB: number[]): number {
     if (vecA.length !== vecB.length || vecA.length === 0) return 0;
@@ -92,21 +93,99 @@ export class SimilarityMatcher {
     return true;
   }
 
+  static async updateCaseAcceptCountByRuleId(
+    ruleId: string,
+    annotationContent: string,
+    annotationType: string,
+    increment: number = 1
+  ): Promise<boolean> {
+    const cases = await this.getHistoricalCases();
+    let matched: HistoricalCase | undefined;
+
+    for (const c of cases) {
+      if (c.ruleId === ruleId && c.annotationType === annotationType) {
+        const sim = this.textSimilarity(c.annotationContent, annotationContent);
+        if (sim > this.CONTENT_SIMILARITY_THRESHOLD) {
+          matched = c;
+          break;
+        }
+      }
+    }
+
+    if (!matched) {
+      matched = cases.find(
+        (c) =>
+          c.ruleId === ruleId &&
+          c.annotationType === annotationType &&
+          this.textSimilarity(c.annotationContent, annotationContent) > this.CONTENT_SIMILARITY_THRESHOLD
+      );
+    }
+
+    if (!matched) return false;
+    matched.acceptCount = Math.max(0, matched.acceptCount + increment);
+    await FileStorageService.writeGlobalJson(this.CASES_FILE, cases);
+    return true;
+  }
+
+  static async updateCaseAcceptCountByContentFingerprint(
+    annotationContent: string,
+    annotationType: string,
+    selectedText: string,
+    increment: number = 1
+  ): Promise<boolean> {
+    const cases = await this.getHistoricalCases();
+    let bestMatch: HistoricalCase | null = null;
+    let bestSim = 0;
+
+    for (const c of cases) {
+      if (c.annotationType !== annotationType) continue;
+      const contentSim = this.textSimilarity(c.annotationContent, annotationContent);
+      const textSim = this.textSimilarity(c.selectedText, selectedText);
+      const combinedSim = contentSim * 0.5 + textSim * 0.5;
+      if (combinedSim > bestSim && combinedSim > this.CONTENT_SIMILARITY_THRESHOLD) {
+        bestSim = combinedSim;
+        bestMatch = c;
+      }
+    }
+
+    if (!bestMatch) return false;
+    bestMatch.acceptCount = Math.max(0, bestMatch.acceptCount + increment);
+    await FileStorageService.writeGlobalJson(this.CASES_FILE, cases);
+    return true;
+  }
+
   static async findOrCreateCase(
     annotationId: string,
     fingerprint: string,
-    factory: () => HistoricalCase
+    factory: () => HistoricalCase,
+    ruleId?: string
   ): Promise<HistoricalCase> {
     const cases = await this.getHistoricalCases();
+    const template = factory();
 
     let existing = cases.find((c) => c.annotationId === annotationId);
     if (existing) return existing;
 
+    if (ruleId) {
+      existing = cases.find(
+        (c) =>
+          c.ruleId === ruleId &&
+          c.annotationType === template.annotationType &&
+          this.textSimilarity(c.annotationContent, template.annotationContent) >
+            this.CONTENT_SIMILARITY_THRESHOLD
+      );
+      if (existing) {
+        existing.acceptCount += 1;
+        await FileStorageService.writeGlobalJson(this.CASES_FILE, cases);
+        return existing;
+      }
+    }
+
     existing = cases.find(
       (c) =>
-        c.annotationContent === factory().annotationContent &&
-        c.annotationType === factory().annotationType &&
-        this.textSimilarity(c.selectedText, fingerprint) > 0.8
+        c.annotationContent === template.annotationContent &&
+        c.annotationType === template.annotationType &&
+        this.textSimilarity(c.selectedText, fingerprint) > this.CONTENT_SIMILARITY_THRESHOLD
     );
     if (existing) {
       existing.acceptCount += 1;
@@ -114,7 +193,7 @@ export class SimilarityMatcher {
       return existing;
     }
 
-    const newCase = factory();
+    const newCase: HistoricalCase = { ...template, ruleId };
     cases.push(newCase);
     await FileStorageService.writeGlobalJson(this.CASES_FILE, cases);
     return newCase;
@@ -175,6 +254,7 @@ export class SimilarityMatcher {
         algorithm: 'similarity',
         matchedCaseId: top.caseItem.id,
         matchedSimilarity: top.similarity,
+        ruleId: top.caseItem.ruleId,
         reason: `匹配到${cluster.length}个历史案例，最高相似度${(top.similarity * 100).toFixed(1)}%，累计被采纳${totalAccepts}次`,
       });
     }

@@ -1,0 +1,365 @@
+[
+  {
+    "feedback": {
+      "recommendationId": "rec_rule_001",
+      "annotationId": "ann_new_001",
+      "ruleId": "rule_code_format",
+      "adopted": true,
+      "adoptedContent": "建议检查代码格式规范",
+      "feedbackType": "submit"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": true,
+    "acceptCountDelta": 1,
+    "updateChannel": "indexAnnotation",
+    "processedAt": "2026-06-11T06:55:13.490Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_sim_001",
+      "matchedCaseId": "case_match_001",
+      "adopted": true,
+      "feedbackType": "adopt"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": true,
+    "acceptCountDelta": 1,
+    "updateChannel": "matchedCaseId",
+    "processedAt": "2026-06-11T06:55:13.494Z",
+    "updatedCaseId": "case_match_001"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_sim_001",
+      "matchedCaseId": "case_match_001",
+      "adopted": false,
+      "feedbackType": "dismiss"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": false,
+    "acceptCountDelta": 0,
+    "updateChannel": "none",
+    "processedAt": "2026-06-11T06:55:13.496Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_rule_001",
+      "ruleId": "rule_code_format",
+      "adopted": true,
+      "feedbackType": "adopt"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": false,
+    "acceptCountDelta": 0,
+    "updateChannel": "none",
+    "processedAt": "2026-06-11T06:55:13.498Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_rule_mq957wpr_eh4vlp",
+      "ruleId": "rule_code_format",
+      "adopted": true,
+      "feedbackType": "adopt"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": false,
+    "acceptCountDelta": 0,
+    "updateChannel": "none",
+    "processedAt": "2026-06-11T06:55:13.503Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_rule_mq957wpr_eh4vlp",
+      "annotationId": "ann_e2e_001",
+      "ruleId": "rule_code_format",
+      "adopted": true,
+      "adoptedContent": "建议检查代码格式规范，使用一致的缩进、命名风格和注释格式。代码风格统一有助于团队协作和后期维护。",
+      "adoptedSuggestedText": "function test() { return 1; }",
+      "feedbackType": "submit"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": true,
+    "acceptCountDelta": 1,
+    "updateChannel": "indexAnnotation",
+    "processedAt": "2026-06-11T06:55:13.504Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_sim_test_001",
+      "matchedCaseId": "case_sim_001",
+      "adopted": true,
+      "feedbackType": "adopt"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": true,
+    "acceptCountDelta": 1,
+    "updateChannel": "matchedCaseId",
+    "processedAt": "2026-06-11T06:55:13.506Z",
+    "updatedCaseId": "case_sim_001"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_sim_test_001",
+      "annotationId": "ann_sim_e2e_001",
+      "matchedCaseId": "case_sim_001",
+      "adopted": true,
+      "adoptedContent": "建议检查代码格式规范",
+      "feedbackType": "submit"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": true,
+    "acceptCountDelta": 1,
+    "updateChannel": "indexAnnotation",
+    "processedAt": "2026-06-11T06:55:13.508Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_rule_001",
+      "annotationId": "ann_new_001",
+      "ruleId": "rule_code_format",
+      "adopted": true,
+      "adoptedContent": "建议检查代码格式规范",
+      "feedbackType": "submit"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": true,
+    "acceptCountDelta": 1,
+    "updateChannel": "indexAnnotation",
+    "processedAt": "2026-06-11T06:55:50.737Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_sim_001",
+      "matchedCaseId": "case_match_001",
+      "adopted": true,
+      "feedbackType": "adopt"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": true,
+    "acceptCountDelta": 1,
+    "updateChannel": "matchedCaseId",
+    "processedAt": "2026-06-11T06:55:50.742Z",
+    "updatedCaseId": "case_match_001"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_sim_001",
+      "matchedCaseId": "case_match_001",
+      "adopted": false,
+      "feedbackType": "dismiss"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": false,
+    "acceptCountDelta": 0,
+    "updateChannel": "none",
+    "processedAt": "2026-06-11T06:55:50.744Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_rule_001",
+      "ruleId": "rule_code_format",
+      "adopted": true,
+      "feedbackType": "adopt"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": false,
+    "acceptCountDelta": 0,
+    "updateChannel": "none",
+    "processedAt": "2026-06-11T06:55:50.746Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_rule_mq958pgf_yb7o1o",
+      "ruleId": "rule_code_format",
+      "adopted": true,
+      "feedbackType": "adopt"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": false,
+    "acceptCountDelta": 0,
+    "updateChannel": "none",
+    "processedAt": "2026-06-11T06:55:50.751Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_rule_mq958pgf_yb7o1o",
+      "annotationId": "ann_e2e_001",
+      "ruleId": "rule_code_format",
+      "adopted": true,
+      "adoptedContent": "建议检查代码格式规范，使用一致的缩进、命名风格和注释格式。代码风格统一有助于团队协作和后期维护。",
+      "adoptedSuggestedText": "function test() { return 1; }",
+      "feedbackType": "submit"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": true,
+    "acceptCountDelta": 1,
+    "updateChannel": "indexAnnotation",
+    "processedAt": "2026-06-11T06:55:50.753Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_sim_test_001",
+      "matchedCaseId": "case_sim_001",
+      "adopted": true,
+      "feedbackType": "adopt"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": true,
+    "acceptCountDelta": 1,
+    "updateChannel": "matchedCaseId",
+    "processedAt": "2026-06-11T06:55:50.755Z",
+    "updatedCaseId": "case_sim_001"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_sim_test_001",
+      "annotationId": "ann_sim_e2e_001",
+      "matchedCaseId": "case_sim_001",
+      "adopted": true,
+      "adoptedContent": "建议检查代码格式规范",
+      "feedbackType": "submit"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": true,
+    "acceptCountDelta": 1,
+    "updateChannel": "indexAnnotation",
+    "processedAt": "2026-06-11T06:55:50.757Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_rule_001",
+      "annotationId": "ann_new_001",
+      "ruleId": "rule_code_format",
+      "adopted": true,
+      "adoptedContent": "建议检查代码格式规范",
+      "feedbackType": "submit"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": true,
+    "acceptCountDelta": 1,
+    "updateChannel": "indexAnnotation",
+    "processedAt": "2026-06-11T06:56:49.145Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_sim_001",
+      "matchedCaseId": "case_match_001",
+      "adopted": true,
+      "feedbackType": "adopt"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": true,
+    "acceptCountDelta": 1,
+    "updateChannel": "matchedCaseId",
+    "processedAt": "2026-06-11T06:56:49.149Z",
+    "updatedCaseId": "case_match_001"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_sim_001",
+      "matchedCaseId": "case_match_001",
+      "adopted": false,
+      "feedbackType": "dismiss"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": false,
+    "acceptCountDelta": 0,
+    "updateChannel": "none",
+    "processedAt": "2026-06-11T06:56:49.151Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_rule_001",
+      "ruleId": "rule_code_format",
+      "adopted": true,
+      "feedbackType": "adopt"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": false,
+    "acceptCountDelta": 0,
+    "updateChannel": "none",
+    "processedAt": "2026-06-11T06:56:49.153Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_rule_mq959yiw_dcnsio",
+      "ruleId": "rule_code_format",
+      "adopted": true,
+      "feedbackType": "adopt"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": false,
+    "acceptCountDelta": 0,
+    "updateChannel": "none",
+    "processedAt": "2026-06-11T06:56:49.160Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_rule_mq959yiw_dcnsio",
+      "annotationId": "ann_e2e_001",
+      "ruleId": "rule_code_format",
+      "adopted": true,
+      "adoptedContent": "建议检查代码格式规范，使用一致的缩进、命名风格和注释格式。代码风格统一有助于团队协作和后期维护。",
+      "adoptedSuggestedText": "function test() { return 1; }",
+      "feedbackType": "submit"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": true,
+    "acceptCountDelta": 1,
+    "updateChannel": "indexAnnotation",
+    "processedAt": "2026-06-11T06:56:49.162Z"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_sim_test_001",
+      "matchedCaseId": "case_sim_001",
+      "adopted": true,
+      "feedbackType": "adopt"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": true,
+    "acceptCountDelta": 1,
+    "updateChannel": "matchedCaseId",
+    "processedAt": "2026-06-11T06:56:49.165Z",
+    "updatedCaseId": "case_sim_001"
+  },
+  {
+    "feedback": {
+      "recommendationId": "rec_sim_test_001",
+      "annotationId": "ann_sim_e2e_001",
+      "matchedCaseId": "case_sim_001",
+      "adopted": true,
+      "adoptedContent": "建议检查代码格式规范",
+      "feedbackType": "submit"
+    },
+    "variant": "A",
+    "abTestRecorded": true,
+    "caseUpdated": true,
+    "acceptCountDelta": 1,
+    "updateChannel": "indexAnnotation",
+    "processedAt": "2026-06-11T06:56:49.167Z"
+  }
+]

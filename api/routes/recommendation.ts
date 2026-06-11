@@ -58,6 +58,7 @@ router.post('/index', async (req, res, next) => {
       };
       request: RecommendationRequest;
       matchedCaseId?: string;
+      ruleId?: string;
     };
     if (!body.annotation || !body.request) {
       return res.status(400).json({ error: 'Missing annotation or request' });
@@ -65,7 +66,8 @@ router.post('/index', async (req, res, next) => {
     const caseItem = await RecommendationService.indexAnnotation(
       body.annotation,
       body.request,
-      body.matchedCaseId
+      body.matchedCaseId,
+      body.ruleId
     );
     res.json(caseItem);
   } catch (e) {

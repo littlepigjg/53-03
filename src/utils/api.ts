@@ -126,6 +126,7 @@ export const recommendationApi = {
     };
     request: RecommendationRequest;
     matchedCaseId?: string;
+    ruleId?: string;
   }) =>
     request<unknown>('/recommendation/index', {
       method: 'POST',

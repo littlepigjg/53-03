@@ -129,10 +129,11 @@ export function ReviewPanel({ paragraphs, annotations, selectedText }: ReviewPan
 
       const req = buildIndexRequest();
       if (req) {
-        recommendationApi.indexAnnotation({
+        await recommendationApi.indexAnnotation({
           annotation: ann,
           request: req,
           matchedCaseId: lastAdopted?.recommendation.matchedCaseId,
+          ruleId: lastAdopted?.recommendation.ruleId,
         }).catch(() => {});
 
         if (lastAdopted) {
@@ -140,6 +141,7 @@ export function ReviewPanel({ paragraphs, annotations, selectedText }: ReviewPan
             recommendationId: lastAdopted.recommendation.id,
             annotationId: ann.id,
             matchedCaseId: lastAdopted.recommendation.matchedCaseId,
+            ruleId: lastAdopted.recommendation.ruleId,
             adopted: true,
             adoptedContent: content.trim(),
             adoptedSuggestedText: type === 'suggestion' ? suggestedText.trim() : undefined,

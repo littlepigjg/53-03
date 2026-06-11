@@ -112,6 +112,7 @@ export interface HistoricalCase {
   acceptCount: number;
   createdAt: string;
   docId: string;
+  ruleId?: string;
 }
 
 export interface AnnotationRecommendation {
@@ -143,6 +144,7 @@ export interface RecommendationFeedback {
   recommendationId: string;
   annotationId?: string;
   matchedCaseId?: string;
+  ruleId?: string;
   adopted: boolean;
   adoptedContent?: string;
   adoptedSuggestedText?: string;

@@ -72,10 +72,13 @@ export class RecommendationService {
       status: 'pending' | 'accepted' | 'rejected';
     },
     request: RecommendationRequest,
-    matchedCaseId?: string
+    matchedCaseId?: string,
+    ruleId?: string
   ): Promise<HistoricalCase> {
     const targetText = request.selectedText || request.fullContent;
     const featureVector = FeatureExtractor.extractFromRequest(request);
+    const isAdopted = !!(matchedCaseId || ruleId);
+    const initialAcceptCount = isAdopted ? 1 : 0;
 
     if (matchedCaseId) {
       await SimilarityMatcher.updateCaseAcceptCountByCaseId(matchedCaseId, 1);
@@ -95,10 +98,11 @@ export class RecommendationService {
         selectedText: targetText,
         paragraphType: request.paragraphType,
         status: annotation.status,
-        acceptCount: annotation.status === 'accepted' ? 1 : 0,
+        acceptCount: initialAcceptCount,
         createdAt: new Date().toISOString(),
         docId: request.docId,
-      })
+      }),
+      ruleId
     );
   }
 

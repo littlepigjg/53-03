@@ -135,6 +135,7 @@ export function RecommendationPanel({
     recommendationApi.sendFeedback({
       recommendationId: rec.id,
       matchedCaseId: rec.matchedCaseId,
+      ruleId: rec.ruleId,
       adopted: false,
       feedbackType: 'dismiss',
       variant,
@@ -145,6 +146,7 @@ export function RecommendationPanel({
     recommendationApi.sendFeedback({
       recommendationId: rec.id,
       matchedCaseId: rec.matchedCaseId,
+      ruleId: rec.ruleId,
       adopted: true,
       feedbackType: 'adopt',
       variant,

@@ -1,0 +1,18 @@
+{
+  "A": {
+    "variant": "A",
+    "algorithm": "hybrid",
+    "totalRecommendations": 0,
+    "adoptedCount": 21,
+    "adoptionRate": 0,
+    "avgConfidence": 0
+  },
+  "B": {
+    "variant": "B",
+    "algorithm": "rule",
+    "totalRecommendations": 0,
+    "adoptedCount": 0,
+    "adoptionRate": 0,
+    "avgConfidence": 0
+  }
+}
