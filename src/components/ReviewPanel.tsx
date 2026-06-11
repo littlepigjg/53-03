@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { MessageSquare, Wand2, User, Mail, Send, X, Sparkles, RefreshCw } from 'lucide-react';
-import type { Annotation, Paragraph, AnnotationType, AnnotationRecommendation, RecommendationRequest } from '../types';
+import type {
+  Annotation,
+  Paragraph,
+  AnnotationType,
+  RecommendationRequest,
+} from '../types';
 import { AnnotationCard } from './AnnotationCard';
-import { RecommendationPanel } from './RecommendationPanel';
+import { RecommendationPanel, type AdoptedRecommendation } from './RecommendationPanel';
 import { useReviewStore } from '../store/reviewStore';
 import { annotationsApi, recommendationApi } from '../utils/api';
 
@@ -51,7 +56,7 @@ export function ReviewPanel({ paragraphs, annotations, selectedText }: ReviewPan
   const [submitting, setSubmitting] = useState(false);
   const [sessionId] = useState(() => generateSessionId());
   const [showRecommendations, setShowRecommendations] = useState(true);
-  const [lastRecommendation, setLastRecommendation] = useState<AnnotationRecommendation | null>(null);
+  const [lastAdopted, setLastAdopted] = useState<AdoptedRecommendation | null>(null);
 
   useEffect(() => {
     if (selectedText) {
@@ -59,7 +64,8 @@ export function ReviewPanel({ paragraphs, annotations, selectedText }: ReviewPan
     }
   }, [selectedText]);
 
-  const handleAdoptRecommendation = (rec: AnnotationRecommendation) => {
+  const handleAdoptRecommendation = (payload: AdoptedRecommendation) => {
+    const { recommendation: rec } = payload;
     setType(rec.type);
     setContent(rec.content);
     if (rec.type === 'suggestion' && rec.suggestedText) {
@@ -68,7 +74,7 @@ export function ReviewPanel({ paragraphs, annotations, selectedText }: ReviewPan
         setOriginalText(selectedText);
       }
     }
-    setLastRecommendation(rec);
+    setLastAdopted(payload);
   };
 
   const buildIndexRequest = (): RecommendationRequest | null => {
@@ -116,8 +122,8 @@ export function ReviewPanel({ paragraphs, annotations, selectedText }: ReviewPan
         content: content.trim(),
         suggestedText: type === 'suggestion' ? suggestedText.trim() : undefined,
         originalText: originalText.trim() || undefined,
-        recommendedBy: lastRecommendation?.algorithm,
-        recommendationId: lastRecommendation?.id,
+        recommendedBy: lastAdopted?.algorithm,
+        recommendationId: lastAdopted?.recommendation.id,
       });
       addAnnotation(ann);
 
@@ -126,13 +132,27 @@ export function ReviewPanel({ paragraphs, annotations, selectedText }: ReviewPan
         recommendationApi.indexAnnotation({
           annotation: ann,
           request: req,
+          matchedCaseId: lastAdopted?.recommendation.matchedCaseId,
         }).catch(() => {});
+
+        if (lastAdopted) {
+          recommendationApi.sendFeedback({
+            recommendationId: lastAdopted.recommendation.id,
+            annotationId: ann.id,
+            matchedCaseId: lastAdopted.recommendation.matchedCaseId,
+            adopted: true,
+            adoptedContent: content.trim(),
+            adoptedSuggestedText: type === 'suggestion' ? suggestedText.trim() : undefined,
+            feedbackType: 'submit',
+            variant: lastAdopted.variant,
+          }).catch(() => {});
+        }
       }
 
       setContent('');
       setSuggestedText('');
       setOriginalText('');
-      setLastRecommendation(null);
+      setLastAdopted(null);
     } catch (e) {
       alert((e as Error).message || '提交失败');
     } finally {
@@ -223,7 +243,7 @@ export function ReviewPanel({ paragraphs, annotations, selectedText }: ReviewPan
                       setContent('');
                       setSuggestedText('');
                       setOriginalText(selectedText || '');
-                      setLastRecommendation(null);
+                      setLastAdopted(null);
                       setType('comment');
                     }}
                     className="text-[11px] text-slate-400 hover:text-slate-600 inline-flex items-center gap-1"
@@ -236,12 +256,12 @@ export function ReviewPanel({ paragraphs, annotations, selectedText }: ReviewPan
                 </p>
               </div>
 
-              {lastRecommendation && (
+              {lastAdopted && (
                 <div className="mb-3 flex items-center gap-2 rounded-md border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-700">
                   <Sparkles size={12} />
-                  已采纳推荐，可直接编辑后提交
+                  已采纳推荐（{lastAdopted.algorithm}），可直接编辑后提交
                   <button
-                    onClick={() => setLastRecommendation(null)}
+                    onClick={() => setLastAdopted(null)}
                     className="ml-auto text-violet-500 hover:text-violet-700"
                   >
                     <X size={12} />

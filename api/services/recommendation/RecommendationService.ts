@@ -10,6 +10,7 @@ import { FeatureExtractor } from './FeatureExtractor.js';
 import { SimilarityMatcher } from './SimilarityMatcher.js';
 import { RuleEngine } from './RuleEngine.js';
 import { ABTestService } from './ABTestService.js';
+import { FeedbackService } from './FeedbackService.js';
 
 export class RecommendationService {
   static async getRecommendations(
@@ -55,13 +56,8 @@ export class RecommendationService {
     feedback: RecommendationFeedback,
     variant: ABTestVariant
   ): Promise<boolean> {
-    await ABTestService.recordAdoption(variant, feedback.adopted);
-
-    if (feedback.adopted && feedback.annotationId) {
-      await SimilarityMatcher.updateCaseAcceptCount(feedback.annotationId, 1);
-    }
-
-    return true;
+    const result = await FeedbackService.process(feedback, variant);
+    return result.caseUpdated || result.abTestRecorded;
   }
 
   static async indexAnnotation(
@@ -75,29 +71,35 @@ export class RecommendationService {
       originalText?: string;
       status: 'pending' | 'accepted' | 'rejected';
     },
-    request: RecommendationRequest
+    request: RecommendationRequest,
+    matchedCaseId?: string
   ): Promise<HistoricalCase> {
     const targetText = request.selectedText || request.fullContent;
     const featureVector = FeatureExtractor.extractFromRequest(request);
 
-    const caseItem: HistoricalCase = {
-      id: `case_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
-      annotationId: annotation.id,
-      annotationType: annotation.type,
-      annotationContent: annotation.content,
-      suggestedText: annotation.suggestedText,
-      originalText: annotation.originalText,
-      featureVector,
-      selectedText: targetText,
-      paragraphType: request.paragraphType,
-      status: annotation.status,
-      acceptCount: annotation.status === 'accepted' ? 1 : 0,
-      createdAt: new Date().toISOString(),
-      docId: request.docId,
-    };
+    if (matchedCaseId) {
+      await SimilarityMatcher.updateCaseAcceptCountByCaseId(matchedCaseId, 1);
+    }
 
-    await SimilarityMatcher.saveHistoricalCase(caseItem);
-    return caseItem;
+    return SimilarityMatcher.findOrCreateCase(
+      annotation.id,
+      targetText,
+      () => ({
+        id: `case_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+        annotationId: annotation.id,
+        annotationType: annotation.type,
+        annotationContent: annotation.content,
+        suggestedText: annotation.suggestedText,
+        originalText: annotation.originalText,
+        featureVector,
+        selectedText: targetText,
+        paragraphType: request.paragraphType,
+        status: annotation.status,
+        acceptCount: annotation.status === 'accepted' ? 1 : 0,
+        createdAt: new Date().toISOString(),
+        docId: request.docId,
+      })
+    );
   }
 
   static async getHistoricalCasesCount(): Promise<number> {

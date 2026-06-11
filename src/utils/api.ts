@@ -104,7 +104,12 @@ export const recommendationApi = {
       body: JSON.stringify({ ...req, sessionId }),
     }),
   sendFeedback: (data: RecommendationFeedback & { variant: ABTestVariant }) =>
-    request<{ ok: boolean }>('/recommendation/feedback', {
+    request<{
+      ok: boolean;
+      caseUpdated: boolean;
+      updatedCaseId?: string;
+      acceptCountDelta: number;
+    }>('/recommendation/feedback', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -120,6 +125,7 @@ export const recommendationApi = {
       status: 'pending' | 'accepted' | 'rejected';
     };
     request: RecommendationRequest;
+    matchedCaseId?: string;
   }) =>
     request<unknown>('/recommendation/index', {
       method: 'POST',
@@ -130,7 +136,22 @@ export const recommendationApi = {
       caseCount: number;
       metrics: { A: ABTestMetrics; B: ABTestMetrics };
       config: ABTestConfig;
+      feedbackStats: {
+        total: number;
+        adopted: number;
+        dismissed: number;
+        caseUpdatedCount: number;
+        byVariant: Record<string, number>;
+      };
     }>('/recommendation/stats'),
+  getFeedbackStats: () =>
+    request<{
+      total: number;
+      adopted: number;
+      dismissed: number;
+      caseUpdatedCount: number;
+      byVariant: Record<string, number>;
+    }>('/recommendation/feedback/stats'),
   getABTestConfig: () => request<ABTestConfig>('/recommendation/abtest/config'),
   setABTestConfig: (config: Partial<ABTestConfig>) =>
     request<ABTestConfig>('/recommendation/abtest/config', {

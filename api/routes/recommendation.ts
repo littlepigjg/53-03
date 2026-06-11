@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { RecommendationService } from '../services/recommendation/RecommendationService.js';
 import { ABTestService } from '../services/recommendation/ABTestService.js';
+import { FeedbackService } from '../services/recommendation/FeedbackService.js';
 import type {
   RecommendationRequest,
   RecommendationFeedback,
@@ -15,7 +16,7 @@ router.post('/recommend', async (req, res, next) => {
     if (!body.docId || !body.paragraphId) {
       return res.status(400).json({ error: 'Missing docId or paragraphId' });
     }
-    const sessionId = body.sessionId || req.headers['x-session-id'] as string || `anon_${Date.now()}`;
+    const sessionId = body.sessionId || (req.headers['x-session-id'] as string) || `anon_${Date.now()}`;
     const result = await RecommendationService.getRecommendations(body, sessionId);
     res.json(result);
   } catch (e) {
@@ -30,8 +31,13 @@ router.post('/feedback', async (req, res, next) => {
       return res.status(400).json({ error: 'Missing recommendationId' });
     }
     const variant = body.variant || 'A';
-    const result = await RecommendationService.recordFeedback(body, variant);
-    res.json({ ok: result });
+    const processed = await FeedbackService.process(body, variant);
+    res.json({
+      ok: true,
+      caseUpdated: processed.caseUpdated,
+      updatedCaseId: processed.updatedCaseId,
+      acceptCountDelta: processed.acceptCountDelta,
+    });
   } catch (e) {
     next(e);
   }
@@ -51,11 +57,16 @@ router.post('/index', async (req, res, next) => {
         status: 'pending' | 'accepted' | 'rejected';
       };
       request: RecommendationRequest;
+      matchedCaseId?: string;
     };
     if (!body.annotation || !body.request) {
       return res.status(400).json({ error: 'Missing annotation or request' });
     }
-    const caseItem = await RecommendationService.indexAnnotation(body.annotation, body.request);
+    const caseItem = await RecommendationService.indexAnnotation(
+      body.annotation,
+      body.request,
+      body.matchedCaseId
+    );
     res.json(caseItem);
   } catch (e) {
     next(e);
@@ -67,7 +78,17 @@ router.get('/stats', async (_req, res, next) => {
     const caseCount = await RecommendationService.getHistoricalCasesCount();
     const metrics = await ABTestService.getMetrics();
     const config = await ABTestService.getConfig();
-    res.json({ caseCount, metrics, config });
+    const feedbackStats = await FeedbackService.getFeedbackStats();
+    res.json({ caseCount, metrics, config, feedbackStats });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.get('/feedback/stats', async (_req, res, next) => {
+  try {
+    const stats = await FeedbackService.getFeedbackStats();
+    res.json(stats);
   } catch (e) {
     next(e);
   }

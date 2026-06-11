@@ -5,6 +5,8 @@ export class SimilarityMatcher {
   private static readonly CASES_FILE = 'historical_cases.json';
   private static readonly TOP_K = 20;
   private static readonly MIN_SIMILARITY = 0.3;
+  private static readonly ACCEPT_BOOST_COEFF = 0.04;
+  private static readonly ACCEPT_BOOST_MAX = 0.25;
 
   static cosineSimilarity(vecA: number[], vecB: number[]): number {
     if (vecA.length !== vecB.length || vecA.length === 0) return 0;
@@ -48,6 +50,11 @@ export class SimilarityMatcher {
     return vecSim * 0.6 + textSim * 0.4 + typeBoost;
   }
 
+  static calculateAcceptBoost(acceptCount: number): number {
+    const rawBoost = Math.log1p(Math.max(acceptCount, 0)) * this.ACCEPT_BOOST_COEFF;
+    return Math.min(rawBoost, this.ACCEPT_BOOST_MAX);
+  }
+
   static async getHistoricalCases(): Promise<HistoricalCase[]> {
     try {
       return await FileStorageService.readGlobalJson<HistoricalCase[]>(this.CASES_FILE, []);
@@ -67,13 +74,50 @@ export class SimilarityMatcher {
     await FileStorageService.writeGlobalJson(this.CASES_FILE, cases);
   }
 
-  static async updateCaseAcceptCount(annotationId: string, increment: number = 1): Promise<void> {
+  static async updateCaseAcceptCount(annotationId: string, increment: number = 1): Promise<boolean> {
     const cases = await this.getHistoricalCases();
     const caseItem = cases.find((c) => c.annotationId === annotationId);
-    if (caseItem) {
-      caseItem.acceptCount += increment;
+    if (!caseItem) return false;
+    caseItem.acceptCount = Math.max(0, caseItem.acceptCount + increment);
+    await FileStorageService.writeGlobalJson(this.CASES_FILE, cases);
+    return true;
+  }
+
+  static async updateCaseAcceptCountByCaseId(caseId: string, increment: number = 1): Promise<boolean> {
+    const cases = await this.getHistoricalCases();
+    const caseItem = cases.find((c) => c.id === caseId);
+    if (!caseItem) return false;
+    caseItem.acceptCount = Math.max(0, caseItem.acceptCount + increment);
+    await FileStorageService.writeGlobalJson(this.CASES_FILE, cases);
+    return true;
+  }
+
+  static async findOrCreateCase(
+    annotationId: string,
+    fingerprint: string,
+    factory: () => HistoricalCase
+  ): Promise<HistoricalCase> {
+    const cases = await this.getHistoricalCases();
+
+    let existing = cases.find((c) => c.annotationId === annotationId);
+    if (existing) return existing;
+
+    existing = cases.find(
+      (c) =>
+        c.annotationContent === factory().annotationContent &&
+        c.annotationType === factory().annotationType &&
+        this.textSimilarity(c.selectedText, fingerprint) > 0.8
+    );
+    if (existing) {
+      existing.acceptCount += 1;
       await FileStorageService.writeGlobalJson(this.CASES_FILE, cases);
+      return existing;
     }
+
+    const newCase = factory();
+    cases.push(newCase);
+    await FileStorageService.writeGlobalJson(this.CASES_FILE, cases);
+    return newCase;
   }
 
   static async findSimilarCases(
@@ -114,10 +158,13 @@ export class SimilarityMatcher {
     for (const [, cluster] of clusters) {
       if (cluster.length === 0) continue;
 
-      const top = cluster.sort((a, b) => b.similarity - a.similarity)[0];
+      const sorted = cluster.sort((a, b) => b.similarity - a.similarity);
+      const top = sorted[0];
       const avgSim = cluster.reduce((sum, c) => sum + c.similarity, 0) / cluster.length;
-      const acceptBoost = Math.min(top.caseItem.acceptCount * 0.05, 0.2);
-      const confidence = Math.min(avgSim * 0.8 + acceptBoost + (cluster.length > 1 ? 0.05 : 0), 0.99);
+      const totalAccepts = cluster.reduce((sum, c) => sum + Math.max(c.caseItem.acceptCount, 0), 0);
+      const acceptBoost = this.calculateAcceptBoost(totalAccepts);
+      const clusterBoost = cluster.length > 2 ? 0.06 : cluster.length > 1 ? 0.03 : 0;
+      const confidence = Math.min(avgSim * 0.7 + acceptBoost + clusterBoost, 0.99);
 
       recommendations.push({
         id: `rec_sim_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
@@ -128,7 +175,7 @@ export class SimilarityMatcher {
         algorithm: 'similarity',
         matchedCaseId: top.caseItem.id,
         matchedSimilarity: top.similarity,
-        reason: `匹配到${cluster.length}个历史案例，最高相似度${(top.similarity * 100).toFixed(1)}%${top.caseItem.acceptCount > 0 ? `，该批注曾被采纳${top.caseItem.acceptCount}次` : ''}`,
+        reason: `匹配到${cluster.length}个历史案例，最高相似度${(top.similarity * 100).toFixed(1)}%，累计被采纳${totalAccepts}次`,
       });
     }
 

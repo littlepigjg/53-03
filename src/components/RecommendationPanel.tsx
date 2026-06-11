@@ -43,6 +43,12 @@ const confidenceLabel = (confidence: number) => {
   return '低';
 };
 
+export interface AdoptedRecommendation {
+  recommendation: AnnotationRecommendation;
+  variant: ABTestVariant;
+  algorithm: RecommendationAlgorithm;
+}
+
 export interface RecommendationPanelProps {
   docId: string;
   selectedParagraph: Paragraph | null;
@@ -50,7 +56,7 @@ export interface RecommendationPanelProps {
   paragraphs: Paragraph[];
   sessionId: string;
   reviewerName: string;
-  onAdopt: (rec: AnnotationRecommendation) => void;
+  onAdopt: (payload: AdoptedRecommendation) => void;
   onClose?: () => void;
 }
 
@@ -62,7 +68,9 @@ export function RecommendationPanel({
   sessionId,
   onAdopt,
   onClose,
+  reviewerName: _reviewerName,
 }: RecommendationPanelProps) {
+  void _reviewerName;
   const [recommendations, setRecommendations] = useState<AnnotationRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
   const [variant, setVariant] = useState<ABTestVariant>('A');
@@ -126,8 +134,9 @@ export function RecommendationPanel({
 
     recommendationApi.sendFeedback({
       recommendationId: rec.id,
-      annotationId: '',
+      matchedCaseId: rec.matchedCaseId,
       adopted: false,
+      feedbackType: 'dismiss',
       variant,
     }).catch(() => {});
   };
@@ -135,11 +144,12 @@ export function RecommendationPanel({
   const handleAdopt = (rec: AnnotationRecommendation) => {
     recommendationApi.sendFeedback({
       recommendationId: rec.id,
-      annotationId: '',
+      matchedCaseId: rec.matchedCaseId,
       adopted: true,
+      feedbackType: 'adopt',
       variant,
     }).catch(() => {});
-    onAdopt(rec);
+    onAdopt({ recommendation: rec, variant, algorithm });
   };
 
   const algoConfig = algorithmLabel[algorithm];

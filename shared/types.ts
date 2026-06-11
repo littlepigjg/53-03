@@ -141,10 +141,12 @@ export interface RecommendationRequest {
 
 export interface RecommendationFeedback {
   recommendationId: string;
-  annotationId: string;
+  annotationId?: string;
+  matchedCaseId?: string;
   adopted: boolean;
   adoptedContent?: string;
   adoptedSuggestedText?: string;
+  feedbackType: 'adopt' | 'dismiss' | 'submit';
 }
 
 export interface ABTestConfig {
