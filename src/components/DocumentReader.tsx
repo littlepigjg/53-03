@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { forwardRef, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { MessageSquare } from 'lucide-react';
@@ -11,69 +11,84 @@ interface DocumentReaderProps {
   interactive?: boolean;
   highlightParagraphId?: string | null;
   onParagraphClick?: (p: Paragraph) => void;
+  onTextSelection?: (paragraphId: string, text: string) => void;
 }
 
-export function DocumentReader({
-  paragraphs,
-  annotations,
-  interactive = true,
-  highlightParagraphId,
-  onParagraphClick,
-}: DocumentReaderProps) {
-  const selectedId = useReviewStore((s) => s.selectedParagraphId);
-  const setSelected = useReviewStore((s) => s.setSelectedParagraphId);
+export const DocumentReader = forwardRef<HTMLDivElement, DocumentReaderProps>(
+  function DocumentReader(
+    { paragraphs, annotations, interactive = true, highlightParagraphId, onParagraphClick, onTextSelection },
+    ref
+  ) {
+    const selectedId = useReviewStore((s) => s.selectedParagraphId);
+    const setSelected = useReviewStore((s) => s.setSelectedParagraphId);
 
-  const annCountByParagraph = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const a of annotations) m.set(a.paragraphId, (m.get(a.paragraphId) || 0) + 1);
-    return m;
-  }, [annotations]);
+    const annCountByParagraph = useMemo(() => {
+      const m = new Map<string, number>();
+      for (const a of annotations) m.set(a.paragraphId, (m.get(a.paragraphId) || 0) + 1);
+      return m;
+    }, [annotations]);
 
-  const handleClick = (p: Paragraph) => {
-    if (!interactive) return;
-    setSelected(p.id);
-    onParagraphClick?.(p);
-  };
+    const handleClick = (p: Paragraph) => {
+      if (!interactive) return;
+      setSelected(p.id);
+      onParagraphClick?.(p);
+    };
 
-  return (
-    <div className="mx-auto max-w-[720px] py-10 px-6">
-      {paragraphs.map((p) => {
-        const count = annCountByParagraph.get(p.id) || 0;
-        const isSelected = selectedId === p.id || highlightParagraphId === p.id;
-        return (
-          <div
-            key={p.id}
-            onClick={() => handleClick(p)}
-            className={`group relative -mx-2 rounded-lg px-2 py-1.5 transition-colors ${
-              interactive ? 'cursor-pointer' : ''
-            } ${isSelected ? 'bg-amber-50' : 'hover:bg-slate-50'}`}
-          >
+    const handleMouseUp = (p: Paragraph, e: React.MouseEvent) => {
+      if (!interactive || !onTextSelection) return;
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+      const text = selection.toString().trim();
+      if (text.length >= 2) {
+        const range = selection.getRangeAt(0);
+        const target = e.currentTarget as HTMLElement;
+        if (target.contains(range.commonAncestorContainer)) {
+          onTextSelection(p.id, text);
+        }
+      }
+    };
+
+    return (
+      <div ref={ref} className="mx-auto max-w-[720px] py-10 px-6">
+        {paragraphs.map((p) => {
+          const count = annCountByParagraph.get(p.id) || 0;
+          const isSelected = selectedId === p.id || highlightParagraphId === p.id;
+          return (
             <div
-              className={`pointer-events-none absolute left-0 top-1.5 bottom-1.5 w-1 rounded-full transition-colors ${
-                isSelected
-                  ? 'bg-amber-500'
-                  : count > 0
-                  ? 'bg-sky-400 opacity-60'
-                  : 'bg-transparent group-hover:bg-slate-200'
-              }`}
-            />
+              key={p.id}
+              onClick={() => handleClick(p)}
+              onMouseUp={(e) => handleMouseUp(p, e)}
+              className={`group relative -mx-2 rounded-lg px-2 py-1.5 transition-colors select-text ${
+                interactive ? 'cursor-pointer' : ''
+              } ${isSelected ? 'bg-amber-50' : 'hover:bg-slate-50'}`}
+            >
+              <div
+                className={`pointer-events-none absolute left-0 top-1.5 bottom-1.5 w-1 rounded-full transition-colors ${
+                  isSelected
+                    ? 'bg-amber-500'
+                    : count > 0
+                    ? 'bg-sky-400 opacity-60'
+                    : 'bg-transparent group-hover:bg-slate-200'
+                }`}
+              />
 
-            <div className="prose prose-slate prose-headings:font-semibold prose-a:text-sky-600 max-w-none font-[Noto_Serif_SC,'Noto Serif SC',serif] leading-[1.9]">
-              <ParagraphRenderer paragraph={p} />
-            </div>
-
-            {count > 0 && interactive && (
-              <div className="absolute -right-1 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-sky-500 px-1.5 text-[10px] font-medium text-white shadow-sm">
-                <MessageSquare size={10} className="mr-0.5" />
-                {count}
+              <div className="prose prose-slate prose-headings:font-semibold prose-a:text-sky-600 max-w-none font-[Noto_Serif_SC,'Noto Serif SC',serif] leading-[1.9]">
+                <ParagraphRenderer paragraph={p} />
               </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+
+              {count > 0 && interactive && (
+                <div className="absolute -right-1 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-sky-500 px-1.5 text-[10px] font-medium text-white shadow-sm">
+                  <MessageSquare size={10} className="mr-0.5" />
+                  {count}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+);
 
 function ParagraphRenderer({ paragraph }: { paragraph: Paragraph }) {
   const { type, level, content } = paragraph;

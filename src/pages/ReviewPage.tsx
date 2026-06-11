@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FileText, AlertCircle, ArrowLeft } from 'lucide-react';
-import { shareApi, annotationsApi } from '../utils/api';
+import { shareApi } from '../utils/api';
 import { useReviewStore } from '../store/reviewStore';
-import type { DocumentMeta, ParsedDocument, Annotation } from '../types';
 import { DocumentReader } from '../components/DocumentReader';
 import { ReviewPanel } from '../components/ReviewPanel';
 
@@ -11,6 +10,9 @@ export function ReviewPage() {
   const { token } = useParams<{ token: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedText, setSelectedText] = useState<string | null>(null);
+  const [selectedParagraphIdForText, setSelectedParagraphIdForText] = useState<string | null>(null);
+  const docRef = useRef<HTMLDivElement>(null);
 
   const setDocument = useReviewStore((s) => s.setDocument);
   const setParsed = useReviewStore((s) => s.setParsed);
@@ -18,6 +20,7 @@ export function ReviewPage() {
   const document = useReviewStore((s) => s.document);
   const parsed = useReviewStore((s) => s.parsed);
   const annotations = useReviewStore((s) => s.annotations);
+  const selectedParagraphId = useReviewStore((s) => s.selectedParagraphId);
 
   useEffect(() => {
     if (!token) return;
@@ -41,6 +44,20 @@ export function ReviewPage() {
       alive = false;
     };
   }, [token, setDocument, setParsed, setAnnotations]);
+
+  const handleTextSelection = (paragraphId: string, text: string) => {
+    if (paragraphId === selectedParagraphId) {
+      setSelectedText(text);
+      setSelectedParagraphIdForText(paragraphId);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedParagraphId !== selectedParagraphIdForText) {
+      setSelectedText(null);
+      setSelectedParagraphIdForText(selectedParagraphId);
+    }
+  }, [selectedParagraphId, selectedParagraphIdForText]);
 
   if (loading) {
     return (
@@ -79,7 +96,7 @@ export function ReviewPage() {
           </div>
           <div>
             <h1 className="text-sm font-semibold text-slate-900">{document.title}</h1>
-            <p className="text-xs text-slate-500">审阅模式 · 点击段落添加批注</p>
+            <p className="text-xs text-slate-500">审阅模式 · 点击段落或选中文字添加批注，AI 将自动推荐批注类型</p>
           </div>
         </div>
         <Link
@@ -92,10 +109,19 @@ export function ReviewPage() {
 
       <div className="flex flex-1 min-h-0">
         <main className="flex-1 overflow-y-auto bg-[#fafafa]">
-          <DocumentReader paragraphs={parsed.paragraphs} annotations={annotations} />
+          <DocumentReader
+            ref={docRef}
+            paragraphs={parsed.paragraphs}
+            annotations={annotations}
+            onTextSelection={handleTextSelection}
+          />
         </main>
-        <div className="w-[380px] shrink-0">
-          <ReviewPanel paragraphs={parsed.paragraphs} annotations={annotations} />
+        <div className="w-[420px] shrink-0">
+          <ReviewPanel
+            paragraphs={parsed.paragraphs}
+            annotations={annotations}
+            selectedText={selectedText}
+          />
         </div>
       </div>
     </div>

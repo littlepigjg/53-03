@@ -4,6 +4,13 @@ import type {
   Annotation,
   ReviewSummary,
   AnnotationStatus,
+  AnnotationRecommendation,
+  RecommendationRequest,
+  RecommendationFeedback,
+  ABTestConfig,
+  ABTestMetrics,
+  RecommendationAlgorithm,
+  ABTestVariant,
 } from '../types';
 
 const API_BASE = '/api';
@@ -56,6 +63,8 @@ export const annotationsApi = {
     content: string;
     suggestedText?: string;
     originalText?: string;
+    recommendedBy?: RecommendationAlgorithm;
+    recommendationId?: string;
   }) => request<Annotation>('/annotations', { method: 'POST', body: JSON.stringify(data) }),
   list: (docId: string) => request<Annotation[]>(`/annotations/${docId}`),
   updateStatus: (id: string, status: AnnotationStatus, ownerNote?: string) =>
@@ -79,4 +88,57 @@ export const exportApi = {
         'document.md',
       text: await r.text(),
     })),
+};
+
+export const recommendationApi = {
+  getRecommendations: (
+    req: RecommendationRequest,
+    sessionId: string
+  ) =>
+    request<{
+      recommendations: AnnotationRecommendation[];
+      variant: ABTestVariant;
+      algorithm: RecommendationAlgorithm;
+    }>('/recommendation/recommend', {
+      method: 'POST',
+      body: JSON.stringify({ ...req, sessionId }),
+    }),
+  sendFeedback: (data: RecommendationFeedback & { variant: ABTestVariant }) =>
+    request<{ ok: boolean }>('/recommendation/feedback', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  indexAnnotation: (data: {
+    annotation: {
+      id: string;
+      docId: string;
+      paragraphId: string;
+      type: 'comment' | 'suggestion';
+      content: string;
+      suggestedText?: string;
+      originalText?: string;
+      status: 'pending' | 'accepted' | 'rejected';
+    };
+    request: RecommendationRequest;
+  }) =>
+    request<unknown>('/recommendation/index', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getStats: () =>
+    request<{
+      caseCount: number;
+      metrics: { A: ABTestMetrics; B: ABTestMetrics };
+      config: ABTestConfig;
+    }>('/recommendation/stats'),
+  getABTestConfig: () => request<ABTestConfig>('/recommendation/abtest/config'),
+  setABTestConfig: (config: Partial<ABTestConfig>) =>
+    request<ABTestConfig>('/recommendation/abtest/config', {
+      method: 'PUT',
+      body: JSON.stringify(config),
+    }),
+  getABTestMetrics: () =>
+    request<{ A: ABTestMetrics; B: ABTestMetrics }>('/recommendation/abtest/metrics'),
+  resetABTestMetrics: () =>
+    request<{ ok: boolean }>('/recommendation/abtest/reset', { method: 'POST' }),
 };

@@ -1,5 +1,10 @@
-import type { Annotation, AnnotationStatus } from '../../shared/types.js';
+import type {
+  Annotation,
+  AnnotationStatus,
+  RecommendationAlgorithm,
+} from '../../shared/types.js';
 import { FileStorageService } from './FileStorageService.js';
+import { SimilarityMatcher } from './recommendation/SimilarityMatcher.js';
 
 function genId() {
   return `ann_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -8,6 +13,22 @@ function genId() {
 export class AnnotationService {
   static async list(docId: string): Promise<Annotation[]> {
     return FileStorageService.readJson<Annotation[]>(FileStorageService.getAnnotationsPath(docId), []);
+  }
+
+  static async listAll(): Promise<Annotation[]> {
+    const fs = await import('node:fs/promises');
+    const path = await import('node:path');
+    const { fileURLToPath } = await import('node:url');
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const annDir = path.resolve(__dirname, '..', 'data', 'annotations');
+    const files = await fs.readdir(annDir).catch(() => [] as string[]);
+    const all: Annotation[] = [];
+    for (const f of files) {
+      const fpath = path.join(annDir, f);
+      const list = await FileStorageService.readJson<Annotation[]>(fpath, []);
+      all.push(...list);
+    }
+    return all;
   }
 
   static async create(data: {
@@ -19,6 +40,8 @@ export class AnnotationService {
     content: string;
     suggestedText?: string;
     originalText?: string;
+    recommendedBy?: RecommendationAlgorithm;
+    recommendationId?: string;
   }): Promise<Annotation> {
     const all = await this.list(data.docId);
     const now = new Date().toISOString();
@@ -33,6 +56,8 @@ export class AnnotationService {
       suggestedText: data.suggestedText,
       originalText: data.originalText,
       status: 'pending',
+      recommendedBy: data.recommendedBy,
+      recommendationId: data.recommendationId,
       createdAt: now,
       updatedAt: now,
     };
@@ -41,12 +66,7 @@ export class AnnotationService {
     return ann;
   }
 
-  static async updateStatus(id: string, status: AnnotationStatus, ownerNote?: string): Promise<Annotation | null> {
-    const anns = await FileStorageService.readJson<Annotation[]>(
-      FileStorageService.getAnnotationsPath('dummy'),
-      []
-    );
-    // Need to search across docs - but let's find by id
+  static async findById(id: string): Promise<{ annotation: Annotation; filePath: string } | null> {
     const fs = await import('node:fs/promises');
     const path = await import('node:path');
     const { fileURLToPath } = await import('node:url');
@@ -58,17 +78,39 @@ export class AnnotationService {
       const list = await FileStorageService.readJson<Annotation[]>(fpath, []);
       const idx = list.findIndex((a) => a.id === id);
       if (idx >= 0) {
-        list[idx] = {
-          ...list[idx],
-          status,
-          ownerNote,
-          updatedAt: new Date().toISOString(),
-        };
-        await FileStorageService.writeJson(fpath, list);
-        return list[idx];
+        return { annotation: list[idx], filePath: fpath };
       }
     }
     return null;
+  }
+
+  static async updateStatus(id: string, status: AnnotationStatus, ownerNote?: string): Promise<Annotation | null> {
+    const found = await this.findById(id);
+    if (!found) return null;
+
+    const { annotation, filePath } = found;
+    const list = await FileStorageService.readJson<Annotation[]>(filePath, []);
+    const idx = list.findIndex((a) => a.id === id);
+    if (idx < 0) return null;
+
+    const wasAccepted = annotation.status === 'accepted';
+    const becomesAccepted = status === 'accepted';
+
+    list[idx] = {
+      ...list[idx],
+      status,
+      ownerNote,
+      updatedAt: new Date().toISOString(),
+    };
+    await FileStorageService.writeJson(filePath, list);
+
+    if (!wasAccepted && becomesAccepted) {
+      await SimilarityMatcher.updateCaseAcceptCount(id, 1);
+    } else if (wasAccepted && !becomesAccepted) {
+      await SimilarityMatcher.updateCaseAcceptCount(id, -1);
+    }
+
+    return list[idx];
   }
 
   static async remove(id: string): Promise<boolean> {

@@ -24,6 +24,8 @@ router.post('/', async (req, res, next) => {
       content: string;
       suggestedText?: string;
       originalText?: string;
+      recommendedBy?: 'similarity' | 'rule' | 'hybrid';
+      recommendationId?: string;
     };
     const docId = body.docId || body.documentId;
     if (!docId || !body.paragraphId || !body.reviewerName || !body.content) {

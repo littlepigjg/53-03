@@ -7,14 +7,22 @@ import shareRouter from './routes/share.js';
 import annotationsRouter from './routes/annotations.js';
 import reviewRouter from './routes/review.js';
 import exportRouter from './routes/export.js';
+import recommendationRouter from './routes/recommendation.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { FileStorageService } from './services/FileStorageService.js';
+import { SeedDataService } from './services/recommendation/SeedDataService.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.resolve(__dirname, '..', 'dist');
 const publicDir = path.resolve(__dirname, '..', 'public');
 
 await FileStorageService.ensureDirs();
+const seedResult = await SeedDataService.initializeIfEmpty();
+if (seedResult.seeded) {
+  console.log(`[Recommendation] 冷启动初始化：已加载 ${seedResult.count} 条种子历史案例`);
+} else {
+  console.log(`[Recommendation] 系统已就绪：当前历史案例库共 ${seedResult.count} 条案例`);
+}
 
 const app = express();
 
@@ -29,6 +37,7 @@ app.use('/api/share', shareRouter);
 app.use('/api/annotations', annotationsRouter);
 app.use('/api/review', reviewRouter);
 app.use('/api/export', exportRouter);
+app.use('/api/recommendation', recommendationRouter);
 
 app.get(['/', '/review/*', '/admin/*'], (_req, res) => {
   res.sendFile(path.join(distDir, 'index.html'));
